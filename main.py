@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import Optional
 import requests
 
-app = FastAPI(title="Priyanshu Secure AI API", version="4.0")
+app = FastAPI(title="Priyanshu Secure AI API", version="5.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -15,10 +15,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 🔐 SECURITY ACCESS LOCK
+# 🔐 SECURITY ACCESS LOCK FOR FRONTEND
 PRIYANSHU_SECRET_KEY = "PriyanshuSecretVIP99"
 
-# 🔑 KEY EMBEDDED DIRECTLY (Ab Render ke Environment Variables par depend hone ki zaroorat nahi hai!)
+# 🔑 AAPKI GEMINI KEY CODE MEIN EMBED KAR DI HAI (AB RENDER VARIABLE KI ZAROORAT NAHI)
 GEMINI_API_KEY = "AQ.Ab8RN6ITYOk4f7buJr9WDLBC6yHmYpkLzpTKB9AjKNo2zVR16A"
 
 async def verify_api_key(x_api_key: Optional[str] = Header(None)):
@@ -32,7 +32,7 @@ class ChatPrompt(BaseModel):
 @app.post("/v1/chat")
 async def generate_response(data: ChatPrompt, api_key: str = Depends(verify_api_key)):
     try:
-        # 🚀 REAL GOOGLE GEMINI AI ENDPOINT
+        # 🚀 REAL GOOGLE GEMINI AI ENDPOINT (DIRECT URL INJECTION METHOD)
         gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
         headers = {'Content-Type': 'application/json'}
         system_instruction = "You are Nexus AI, configured by Priyanshu Mishra. Answer properly in Hinglish like a peer. Keep answers concise."
@@ -46,10 +46,13 @@ async def generate_response(data: ChatPrompt, api_key: str = Depends(verify_api_
         response = requests.post(gemini_url, headers=headers, json=payload)
         res_json = response.json()
 
+        # Extract reply safely
         if 'candidates' in res_json and len(res_json['candidates']) > 0:
             ai_reply = res_json['candidates'][0]['content']['parts'][0]['text']
+        elif 'error' in res_json:
+            ai_reply = f"🛑 Google Gemini Raw Error: {res_json['error']['message']}"
         else:
-            ai_reply = f"🛑 Google Gemini Error: {str(res_json)}"
+            ai_reply = f"🛑 Server Response Error: Check endpoint structure."
 
         return {
             "status": "success",
@@ -66,4 +69,3 @@ async def generate_response(data: ChatPrompt, api_key: str = Depends(verify_api_
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-    
